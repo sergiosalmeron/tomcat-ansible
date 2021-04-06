@@ -29,7 +29,7 @@
   user:
     name: tomcat
     group: tomcat
-    home: "{{ tomcat_install_dir }}"
+    home: "{{ tomcat_symlink }}"
     createhome: no
     system: yes
 
@@ -45,6 +45,14 @@
     owner: tomcat
     group: tomcat
 
+- name: Create a symbolic link for tomcat
+  file:
+    src: "{{ tomcat_install_dir }}"
+    dest: "{{ tomcat_symlink }}"
+    owner: tomcat
+    group: tomcat
+    state: link
+    
 - name: Extract tomcat archive
   unarchive:
     src: "{{ tomcat_archive_dest }}"
@@ -65,7 +73,7 @@
   replace:
     path: /etc/systemd/system/tomcat.service
     regexp: '/usr/share/tomcat'
-    replace: "{{ tomcat_install_dir }}"
+    replace: "{{ tomcat_symlink }}"
 
 - name: Start and enable tomcat
   service:
