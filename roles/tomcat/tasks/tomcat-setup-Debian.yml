@@ -29,7 +29,7 @@
   user:
     name: tomcat
     group: tomcat
-    home: /usr/share/tomcat
+    home: "{{ tomcat_install_dir }}"
     createhome: no
     system: yes
 
@@ -40,7 +40,7 @@
 
 - name: Create a tomcat directory
   file:
-    path: /usr/share/tomcat
+    path: "{{ tomcat_install_dir }}"
     state: directory
     owner: tomcat
     group: tomcat
@@ -48,18 +48,24 @@
 - name: Extract tomcat archive
   unarchive:
     src: "{{ tomcat_archive_dest }}"
-    dest: /usr/share/tomcat
+    dest: "{{ tomcat_install_dir }}"
     owner: tomcat
     group: tomcat
     remote_src: yes
     extra_opts: "--strip-components=1"
-    creates: /usr/share/tomcat/bin
+    creates: "{{ tomcat_install_dir }}/bin"
 
 - name: Copy tomcat service file
   template:
     src: templates/tomcat.service.j2
     dest: /etc/systemd/system/tomcat.service
   when: ansible_service_mgr == "systemd"
+  
+- name: Update service definition pointer to tomcat location
+  replace:
+    path: /etc/systemd/system/tomcat.service
+    regexp: '/usr/share/tomcat'
+    replace: "{{ tomcat_install_dir }}"
 
 - name: Start and enable tomcat
   service:
@@ -71,7 +77,7 @@
 - name: Set UI access credentials
   template:
     src: tomcat-users.xml.j2
-    dest: /usr/share/tomcat/conf/tomcat-users.xml
+    dest: "{{ tomcat_install_dir }}/conf/tomcat-users.xml"
   notify: restart tomcat
 
 - name: Allow access to Manager and Host Manager apps from any IP
@@ -79,7 +85,7 @@
     src: context.xml.j2 
     dest: "{{ item }}"
   with_items:
-    - /usr/share/tomcat/webapps/host-manager/META-INF/context.xml
-    - /usr/share/tomcat/webapps/manager/META-INF/context.xml
+    - "{{ tomcat_install_dir }}/webapps/host-manager/META-INF/context.xml"
+    - "{{ tomcat_install_dir }}/webapps/manager/META-INF/context.xml"
   notify: restart tomcat
 
